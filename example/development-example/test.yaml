@@ -1,0 +1,106 @@
+version: 1.0
+name: Test rule package
+refresh_interval: 3600
+uuid_index_path: ~
+abort_on_error:
+
+input:
+  - type: list
+    source:
+      type: file
+      path: ./input/test-list.txt
+    rule:
+      identifier: local_test_list
+      name: Blocked words from local list
+      type: word
+      item:
+        type: word
+        rating: 2
+
+  - type: table
+    source:
+      type: file
+      path: ./input/test-table.csv
+      options:
+        separator: ;
+        skipRows: 1
+        mapping:
+          type: 0
+          value: 1
+          rating: 2
+    rule:
+      identifier: local_test_table
+      name: Blocked words from local table
+      type: word
+
+  - type: list
+    source:
+      type: file
+      path: ./input/test-list.zip
+    rule:
+      identifier: local_test_list_zipped
+      name: Blocked words from local ZIPPED list
+      type: word
+      item:
+        type: word
+        rating: 5
+
+  - type: list
+    source:
+      type: file
+      path: ./input/test-list.gz
+    rule:
+      identifier: local_test_list_gzipped
+      name: Blocked words from local GZIPPED list
+      type: word
+      item:
+        type: word
+        rating: 50
+
+  - type: list
+    source:
+      type: web
+      url: https://zepi.io/dev/mosparo/rpg/test-list.txt
+    rule:
+      identifier: web_test_list
+      name: Blocked words from web list
+      type: word
+      item:
+        type: word
+        rating: 10
+
+  - type: list
+    source:
+      type: web
+      url: https://zepi.io/dev/mosparo/rpg/test-list.zip
+      options:
+        verify_ssl: false
+        user_agent: Test user agent for maximum security
+        acceptable_content_types:
+          - text/plain
+          - application/zip
+    rule:
+      identifier: web_test_list_zipped
+      name: Blocked words from web list zipped
+      type: word
+      item:
+        type: word
+        rating: 20
+
+  - type: list
+    source:
+      type: web
+      url: https://zepi.io/dev/mosparo/rpg/test-list.gz
+    rule:
+      identifier: web_test_list_gzipped
+      name: Blocked words from web list gzipped
+      type: word
+      item:
+        type: word
+        rating: 25
+
+output:
+  - type: file
+    identifier: store_in_file
+    options:
+      file_path: ./output/test.json
