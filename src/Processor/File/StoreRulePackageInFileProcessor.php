@@ -37,8 +37,8 @@ class StoreRulePackageInFileProcessor implements ProcessorInterface
 
         // Generate the SHA256 hash
         file_put_contents(
-            $filePath . '.sha256',
-            hash_file('sha256', $filePath)
+            $destination->getFilePath() . '.sha256',
+            hash_file('sha256', $destination->getFilePath())
         );
 
         return true;
