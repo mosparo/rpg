@@ -11,14 +11,34 @@ services:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
 
+    _instanceof:
+        MosparoRpg\Type\TypeInterface:
+            tags: [ 'mosparoRpg.type' ]
+
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
-    App\:
+    MosparoRpg\:
         resource: '../src/'
         exclude:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    MosparoRpg\Processor\:
+        resource: '../src/Processor'
+        public: true
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    MosparoRpg\Type\Manager:
+        class: MosparoRpg\Type\Manager
+        arguments: [ !tagged mosparoRpg.type ]
+
+    MosparoRpg\Processor\MainProcessor:
+        class: MosparoRpg\Processor\MainProcessor
+        arguments:
+            - '@service_container'
+
+    MosparoRpg\Helper\UuidHelper:
+        class: MosparoRpg\Helper\UuidHelper
