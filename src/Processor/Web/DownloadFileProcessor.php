@@ -28,7 +28,7 @@ class DownloadFileProcessor implements ProcessorInterface
         $mainProcessor->getLogger()->debug(sprintf('Create temporary file for download from "%s".', $context->getSource()->getUrl()));
         $destination = new TemporaryFileElement($context->getRulePackageContext(), 'downloaded');
 
-        if ($context->getSource()->getOption('accepable_content_types', [])) {
+        if ($context->getSource()->getOption('acceptable_content_types', [])) {
             $result = $this->verifyContentType($mainProcessor, $context->getSource()->getUrl(), $context->getSource()->getOptions());
 
             if (!$result) {
@@ -94,7 +94,7 @@ class DownloadFileProcessor implements ProcessorInterface
 
         $mainProcessor->getLogger()->debug(sprintf('Content type of "%s" is "%s".', $url, $contentType));
 
-        return $contentType !== '' && in_array($contentType, $options['accepable_content_types'] ?? []);
+        return $contentType !== '' && in_array($contentType, $options['acceptable_content_types'] ?? []);
     }
 
     protected function prepareCurlRequest($url, $options)
