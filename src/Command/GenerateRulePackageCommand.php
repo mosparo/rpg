@@ -2,17 +2,12 @@
 
 namespace MosparoRpg\Command;
 
-use MosparoRpg\__old\Input\ListInputProcessor;
-use MosparoRpg\__old\Input\TableInputProcessor;
-use MosparoRpg\__old\Output\FileOutputProcessor;
 use MosparoRpg\Context\RulePackageContext;
 use MosparoRpg\Element\DirectoryElement;
-use MosparoRpg\Element\FileElement;
-use MosparoRpg\Element\TemporaryFileElement;
+use MosparoRpg\Element\TaskFileElement;
+use MosparoRpg\Helper\CliOutputHelper;
 use MosparoRpg\Helper\UuidHelper;
 use MosparoRpg\Processor\MainProcessor;
-use MosparoRpg\Processor\Package\GenerateRulePackageFooterProcessor;
-use MosparoRpg\Processor\Package\GenerateRulePackageHeaderProcessor;
 use MosparoRpg\Type\Manager as TypeManager;
 use MosparoRpg\Util\TemporaryFileUtil;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -26,7 +21,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Yaml\Yaml;
 
-#[AsCommand(name: 'rpg:generate-rule-package')]
+#[AsCommand(name: 'rpg:generate-rule-package', aliases: ['generate'])]
 class GenerateRulePackageCommand extends Command
 {
     protected TypeManager $typeManager;
@@ -52,6 +47,7 @@ class GenerateRulePackageCommand extends Command
 
             // Options
             ->addOption('tempdir', 't', InputOption::VALUE_REQUIRED, 'The temporary directory.', sys_get_temp_dir())
+            ->addOption('outputOnly', 'o', InputOption::VALUE_NONE, 'If set, the command will not recreate the rule package but just process the outputs')
         ;
     }
 
@@ -59,9 +55,18 @@ class GenerateRulePackageCommand extends Command
     {
         $consoleLogger = new ConsoleLogger($output);
         $this->mainProcessor->setLogger($consoleLogger);
+        $cliOutputHelper = new CliOutputHelper($output);
 
         $output->writeln([
-            'mosparo RPG'
+            PHP_EOL .
+            '                                               _____  _____   _____' . PHP_EOL .
+            '                                              |  __ \|  __ \ / ____|' . PHP_EOL .
+            '  _ __ ___   ___  ___ _ __   __ _ _ __ ___    | |__) | |__) | |  __ ' . PHP_EOL .
+            ' | \'_ ` _ \ / _ \/ __| \'_ \ / _` | \'__/ _ \   |  _  /|  ___/| | |_ |' . PHP_EOL .
+            ' | | | | | | (_) \__ \ |_) | (_| | | | (_) |  | | \ \| |    | |__| |' . PHP_EOL .
+            ' |_| |_| |_|\___/|___/ .__/ \__,_|_|  \___/   |_|  \_\_|     \_____|' . PHP_EOL .
+            '                     | |' . PHP_EOL .
+            '                     |_|  mosparo.io' . PHP_EOL
         ]);
 
         $filesystem = new Filesystem();
@@ -83,8 +88,14 @@ class GenerateRulePackageCommand extends Command
         // Load the profile
         $profile = Yaml::parseFile($profileFilePath);
 
+        $output->writeln([
+            ' ' . str_pad('Name:', 10) . $profile['name'],
+            ' ' . str_pad('File:', 10) . $profileFilePath,
+            '',
+        ]);
+
         // Set the uuid file
-        $this->uuidHelper->setUuidFilePath($profile['uuid_index_path'] ?? $profileFilePath . '.uuidIndex');
+        $this->uuidHelper->setUuidFilePath($profile['paths']['uuid_index_path'] ?? $profileFilePath . '.rpuuids');
 
         // Prepare the rule package context
         $rulePackageContext = (new RulePackageContext())
@@ -93,20 +104,34 @@ class GenerateRulePackageCommand extends Command
             ->setProfileDirectory(new DirectoryElement(dirname($profileFilePath)))
             ->setTemporaryDirectory(new DirectoryElement($temporaryDirectory));
 
-        // Chaining is not possible with this one since we need the $rulePackageContext in the TemporaryFileElement
-        $rulePackageContext->setDestination(new TemporaryFileElement($rulePackageContext, 'package'));
+        // Create the destination for the rule package tasks.
+        $destination = new TaskFileElement($profile['paths']['task_file'] ?? $profileFilePath . '.rptasks');
+        $rulePackageContext->setDestination($destination);
 
-        // Generate the rule package header
-        $this->mainProcessor->process($rulePackageContext, [
-            500 => [GenerateRulePackageHeaderProcessor::class]
-        ]);
+        if ($input->getOption('outputOnly') && !$destination->valid()) {
+            $consoleLogger->critical('The command was started with -o, output only, but the task file is not valid. Does it exist?');
+            return Command::FAILURE;
+        }
 
-        foreach ($profile['input'] as $inputProfile) {
-            $type = $this->typeManager->getInputType($inputProfile['type'] ?? null);
+        // We do not create the tasks if the output only option is set.
+        if (!$input->getOption('outputOnly') || !$destination->valid()) {
+            $destination->resetTaskFile();
 
-            $ruleContext = $type->prepareRuleContext($rulePackageContext, $inputProfile);
+            foreach ($profile['input'] as $idx => $inputProfile) {
+                $cliOutputHelper->writeln('input', sprintf('Process input %s', $inputProfile['identifier'] ?? $idx), 'green');
 
-            $this->mainProcessor->process($ruleContext, $type->getProcessors());
+                $type = $this->typeManager->getInputType($inputProfile['type'] ?? null);
+
+                $ruleContext = $type->prepareRuleContext($rulePackageContext, $inputProfile);
+
+                $this->mainProcessor->process($ruleContext, $type->getProcessors());
+            }
+
+            // Store the new list of UUIDs
+            $destination->finalizeTasksFile();
+            $this->uuidHelper->storeNewUuidIndex();
+        } else {
+            $cliOutputHelper->writeln('input', 'Inputs are skipped as requested.', 'green');
         }
 
         // Abort the generating process if an error occurred and the option to abort is set
@@ -117,16 +142,22 @@ class GenerateRulePackageCommand extends Command
             return Command::FAILURE;
         }
 
-        // Generate the rule package footer
-        $this->mainProcessor->process($rulePackageContext, [
-            500 => [GenerateRulePackageFooterProcessor::class]
+        $output->writeln([
+            '',
+            ' ' . str_pad('Tasks:', 10) . $destination->getNumberOfTasks(),
+            '',
+            ' Rule package tasks prepared. Processing outputs...',
+            '',
         ]);
 
         // Process the configured outputs
-        foreach ($profile['output'] as $outputProfile) {
+        foreach ($profile['output'] as $idx => $outputProfile) {
+            $cliOutputHelper->writeln('output', sprintf('Process output %s', $outputProfile['identifier'] ?? $idx));
             $type = $this->typeManager->getOutputType($outputProfile['type'] ?? null);
 
             $outputContext = $type->prepareOutputContext($rulePackageContext, $outputProfile);
+
+            $outputContext->setCliOutputHelper($cliOutputHelper);
 
             $this->mainProcessor->process($outputContext, $type->getProcessors());
         }
@@ -134,10 +165,15 @@ class GenerateRulePackageCommand extends Command
         // Cleanup
         $this->cleanupTemporaryFiles($rulePackageContext);
 
+        $output->writeln([
+            'Profile processed.',
+            '',
+        ]);
+
         return Command::SUCCESS;
     }
 
-    protected function preparePath($path)
+    protected function preparePath($path): string
     {
         $path = Path::canonicalize($path);
 

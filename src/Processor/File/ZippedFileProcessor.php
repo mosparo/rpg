@@ -9,6 +9,7 @@ use MosparoRpg\Element\TemporaryFileElement;
 use MosparoRpg\Processor\MainProcessor;
 use MosparoRpg\Processor\ProcessorInterface;
 use MosparoRpg\Trait\KeyTrait;
+use ZipArchive;
 
 class ZippedFileProcessor implements ProcessorInterface
 {
@@ -28,8 +29,8 @@ class ZippedFileProcessor implements ProcessorInterface
             return true;
         }
 
-        $zip = new \ZipArchive();
-        $result = $zip->open($context->getSource()->getFilePath(), \ZipArchive::RDONLY);
+        $zip = new ZipArchive();
+        $result = $zip->open($context->getSource()->getFilePath(), ZipArchive::RDONLY);
 
         if ($result !== true) {
             $mainProcessor->getLogger()->error(sprintf('Cannot open ZIP archive "%s". Error: %s', $context->getSource()->getFilePath(), $result));

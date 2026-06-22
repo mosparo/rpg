@@ -2,6 +2,7 @@
 
 namespace MosparoRpg\Processor\Web;
 
+use CurlHandle;
 use MosparoRpg\Context\ContextInterface;
 use MosparoRpg\Context\RuleContext;
 use MosparoRpg\Element\TemporaryFileElement;
@@ -16,7 +17,7 @@ class DownloadFileProcessor implements ProcessorInterface
 
     use KeyTrait;
 
-    protected $destinationFileHandle = null;
+    protected mixed $destinationFileHandle = null;
 
     public function isApplicable(ContextInterface $context): bool
     {
@@ -97,7 +98,7 @@ class DownloadFileProcessor implements ProcessorInterface
         return $contentType !== '' && in_array($contentType, $options['acceptable_content_types'] ?? []);
     }
 
-    protected function prepareCurlRequest($url, $options)
+    protected function prepareCurlRequest($url, $options): false|CurlHandle
     {
         $curlHandle = curl_init();
         curl_setopt($curlHandle, CURLOPT_URL, $url);
@@ -120,7 +121,7 @@ class DownloadFileProcessor implements ProcessorInterface
         return $curlHandle;
     }
 
-    public function writeToFile($curlHandle, $data)
+    public function writeToFile($curlHandle, $data): false|int
     {
         return fwrite($this->destinationFileHandle, $data);
     }

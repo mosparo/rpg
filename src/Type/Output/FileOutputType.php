@@ -2,7 +2,7 @@
 
 namespace MosparoRpg\Type\Output;
 
-use MosparoRpg\Processor\File\StoreRulePackageInFileProcessor;
+use MosparoRpg\Processor\Storage\StoreRulePackageInFileProcessor;
 use MosparoRpg\Trait\KeyTrait;
 use MosparoRpg\Type\AbstractOutputType;
 use MosparoRpg\Type\OutputTypeInterface;

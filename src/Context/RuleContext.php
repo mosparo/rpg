@@ -3,7 +3,7 @@
 namespace MosparoRpg\Context;
 
 use MosparoRpg\Element\ElementInterface;
-use MosparoRpg\Element\TemporaryFileElement;
+use MosparoRpg\Element\TaskFileElement;
 use MosparoRpg\Type\InputTypeInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -27,7 +27,7 @@ class RuleContext implements ContextInterface
     
     protected ?ElementInterface $source = null;
     
-    protected ?TemporaryFileElement $destination = null;
+    protected ?TaskFileElement $destination = null;
 
     protected int $itemCounter = 0;
 
@@ -131,14 +131,14 @@ class RuleContext implements ContextInterface
         return $this->source;
     }
 
-    public function setDestination(TemporaryFileElement $destination): self
+    public function setDestination(TaskFileElement $destination): self
     {
         $this->destination = $destination;
 
         return $this;
     }
 
-    public function getDestination(): ?TemporaryFileElement
+    public function getDestination(): ?TaskFileElement
     {
         return $this->destination;
     }

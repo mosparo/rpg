@@ -17,7 +17,7 @@ class MainProcessor
         $this->container = $container;
     }
 
-    public function setLogger(ConsoleLogger $logger)
+    public function setLogger(ConsoleLogger $logger): void
     {
         $this->logger = $logger;
     }
@@ -27,7 +27,7 @@ class MainProcessor
         return $this->logger;
     }
 
-    public function process(ContextInterface $context, array $processors)
+    public function process(ContextInterface $context, array $processors): void
     {
         ksort($processors);
 

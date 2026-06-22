@@ -6,6 +6,7 @@ use MosparoRpg\Context\ContextInterface;
 use MosparoRpg\Context\RuleItemContext;
 use MosparoRpg\Processor\MainProcessor;
 use MosparoRpg\Processor\ProcessorInterface;
+use MosparoRpg\Task\RuleItemTask;
 use MosparoRpg\Trait\KeyTrait;
 
 class AppendRuleItemProcessor implements ProcessorInterface
@@ -28,15 +29,14 @@ class AppendRuleItemProcessor implements ProcessorInterface
         $ruleContext = $context->getRuleContext();
         $destination = $ruleContext->getDestination();
 
-        $ruleItemJson = json_encode($context->toArray());
-
-        if ($ruleContext->getItemCounter()) {
-            $destination->writeToFile(',');
-        }
-
-        $destination->writeToFile($ruleItemJson);
-
-        $ruleContext->increaseItemCounter();
+        $task = new RuleItemTask(
+            $ruleContext->getUuid(),
+            $context->getUuid(),
+            $context->getType(),
+            $context->getValue(),
+            $context->getRating()
+        );
+        $destination->writeTaskToFile($task);
 
         return true;
     }

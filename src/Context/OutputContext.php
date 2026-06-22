@@ -3,6 +3,7 @@
 namespace MosparoRpg\Context;
 
 use MosparoRpg\Element\ElementInterface;
+use MosparoRpg\Helper\CliOutputHelper;
 use MosparoRpg\Type\OutputTypeInterface;
 
 class OutputContext implements ContextInterface
@@ -10,6 +11,8 @@ class OutputContext implements ContextInterface
     protected RulePackageContext $rulePackageContext;
 
     protected OutputTypeInterface $outputType;
+
+    protected CliOutputHelper $cliOutputHelper;
 
     protected ?string $identifier = null;
     
@@ -31,6 +34,18 @@ class OutputContext implements ContextInterface
     public function getOutputType(): OutputTypeInterface
     {
         return $this->outputType;
+    }
+
+    public function getCliOutputHelper(): CliOutputHelper
+    {
+        return $this->cliOutputHelper;
+    }
+
+    public function setCliOutputHelper(CliOutputHelper $cliOutputHelper): self
+    {
+        $this->cliOutputHelper = $cliOutputHelper;
+
+        return $this;
     }
 
     public function setIdentifier(string $identifier): self

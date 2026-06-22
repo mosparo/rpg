@@ -3,7 +3,7 @@
 namespace MosparoRpg\Context;
 
 use MosparoRpg\Element\DirectoryElement;
-use MosparoRpg\Element\TemporaryFileElement;
+use MosparoRpg\Element\TaskFileElement;
 
 class RulePackageContext implements ContextInterface
 {
@@ -15,7 +15,7 @@ class RulePackageContext implements ContextInterface
 
     protected ?DirectoryElement $temporaryDirectory = null;
 
-    protected ?TemporaryFileElement $destination = null;
+    protected ?TaskFileElement $destination = null;
 
     protected int $ruleCounter = 0;
 
@@ -69,14 +69,14 @@ class RulePackageContext implements ContextInterface
         return $this->temporaryDirectory;
     }
 
-    public function setDestination(TemporaryFileElement $destination): self
+    public function setDestination(TaskFileElement $destination): self
     {
         $this->destination = $destination;
 
         return $this;
     }
 
-    public function getDestination(): ?TemporaryFileElement
+    public function getDestination(): ?TaskFileElement
     {
         return $this->destination;
     }

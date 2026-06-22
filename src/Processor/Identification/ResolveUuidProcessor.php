@@ -33,13 +33,19 @@ class ResolveUuidProcessor implements ProcessorInterface
     {
         $identifier = $context->buildIdentifier();
 
-        $uuid = $this->uuidHelper->findUuidForIdentifier($identifier);
+        $type = null;
+        if ($context instanceof RuleContext) {
+            $type = 'r';
+        } else if ($context instanceof RuleItemContext) {
+            $type = 'i';
+        }
 
+        $uuid = $this->uuidHelper->findUuidForIdentifier($identifier, $type);
         if ($uuid === null) {
             $uuid = Uuid::v4();
-
-            $this->uuidHelper->storeUuid($uuid, $identifier);
         }
+
+        $this->uuidHelper->storeUuid($identifier, $type, $uuid);
 
         $context->setUuid($uuid);
 

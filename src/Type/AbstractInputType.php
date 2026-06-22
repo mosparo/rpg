@@ -2,18 +2,16 @@
 
 namespace MosparoRpg\Type;
 
+use Exception;
 use MosparoRpg\Context\RuleContext;
 use MosparoRpg\Context\RulePackageContext;
 use MosparoRpg\Element\FileElement;
-use MosparoRpg\Element\TemporaryFileElement;
 use MosparoRpg\Element\UrlElement;
 use MosparoRpg\Processor\File\GzippedFileProcessor;
 use MosparoRpg\Processor\File\ZippedFileProcessor;
 use MosparoRpg\Processor\Identification\ResolveUuidProcessor;
 use MosparoRpg\Processor\Package\AppendRuleItemProcessor;
 use MosparoRpg\Processor\Package\AppendRuleProcessor;
-use MosparoRpg\Processor\Package\GenerateRuleFooterProcessor;
-use MosparoRpg\Processor\Package\GenerateRuleHeaderProcessor;
 use MosparoRpg\Processor\Web\DownloadFileProcessor;
 use MosparoRpg\Trait\MergeProcessorsTrait;
 use Symfony\Component\Filesystem\Path;
@@ -34,14 +32,6 @@ abstract class AbstractInputType implements InputTypeInterface, TypeInterface
             ],
             InputTypeInterface::PRIORITY_PREPARE => [
                 ResolveUuidProcessor::class,
-            ],
-            InputTypeInterface::PRIORITY_OBJECT_START => [
-                GenerateRuleHeaderProcessor::class,
-            ],
-            InputTypeInterface::PRIORITY_OBJECT_END => [
-                GenerateRuleFooterProcessor::class,
-            ],
-            InputTypeInterface::PRIORITY_FINALIZE => [
                 AppendRuleProcessor::class,
             ],
         ];
@@ -72,13 +62,16 @@ abstract class AbstractInputType implements InputTypeInterface, TypeInterface
             $source = new FileElement(Path::makeAbsolute(Path::canonicalize($input['source']['path']), $rulePackageContext->getProfileDirectory()->getPath()));
         } else if ($input['source']['type'] === 'web') {
             $source = new UrlElement($input['source']['url']);
+        } else {
+            throw new Exception('Invalid source type');
         }
 
         $source->setOptions($input['source']['options'] ?? []);
 
         $ruleContext->setSource($source);
 
-        $ruleContext->setDestination(new TemporaryFileElement($rulePackageContext, 'rule'));
+        //$ruleContext->setDestination(new TemporaryFileElement($rulePackageContext, 'rule'));
+        $ruleContext->setDestination($rulePackageContext->getDestination());
 
         return $ruleContext;
     }

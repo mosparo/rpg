@@ -17,10 +17,8 @@ abstract class AbstractOutputType implements OutputTypeInterface, TypeInterface
 
     public function prepareOutputContext(RulePackageContext $rulePackageContext, array $input): OutputContext
     {
-        $outputContext = (new OutputContext($rulePackageContext, $this))
+        return (new OutputContext($rulePackageContext, $this))
             ->setIdentifier($input['identifier'] ?? uniqid())
             ->setOptions($input['options'] ?? []);
-
-        return $outputContext;
     }
 }

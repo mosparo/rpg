@@ -6,6 +6,7 @@ use MosparoRpg\Context\ContextInterface;
 use MosparoRpg\Context\RuleContext;
 use MosparoRpg\Processor\MainProcessor;
 use MosparoRpg\Processor\ProcessorInterface;
+use MosparoRpg\Task\RuleTask;
 use MosparoRpg\Trait\KeyTrait;
 
 class AppendRuleProcessor implements ProcessorInterface
@@ -25,16 +26,16 @@ class AppendRuleProcessor implements ProcessorInterface
             return true;
         }
 
-        $rulePackageContext = $context->getRulePackageContext();
-        $destination = $rulePackageContext->getDestination();
+        $destination = $context->getRulePackageContext()->getDestination();
 
-        if ($rulePackageContext->getRuleCounter()) {
-            $destination->writeToFile(',');
-        }
-
-        $destination->copyFromFile($context->getDestination());
-
-        $rulePackageContext->increaseRuleCounter();
+        $task = new RuleTask(
+            $context->getUuid(),
+            $context->getType(),
+            $context->getName(),
+            null,
+            $context->getSpamRatingFactor()
+        );
+        $destination->writeTaskToFile($task);
 
         return true;
     }
