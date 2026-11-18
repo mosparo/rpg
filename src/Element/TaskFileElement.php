@@ -31,6 +31,8 @@ class TaskFileElement extends FileElement implements Iterator
 
     protected null|RuleTask|RuleItemTask $task = null;
 
+    protected int $readTasks = 0;
+
     public function getFilePath(bool $temporaryFile = false): string
     {
         $suffix = '';
@@ -88,7 +90,7 @@ class TaskFileElement extends FileElement implements Iterator
     {
         $this->openFile();
 
-        $this->handle->fwrite(serialize($task) . "\n");
+        $this->handle->fwrite(base64_encode(serialize($task)) . "\n");
         $this->numberOfTasks++;
     }
 
@@ -132,6 +134,7 @@ class TaskFileElement extends FileElement implements Iterator
 
         $this->handle->rewind();
         $this->handle->seek(1);
+        $this->readTasks = 0;
         $this->readNextLine();
     }
 
@@ -151,18 +154,34 @@ class TaskFileElement extends FileElement implements Iterator
         $this->openFile();
 
         $line = $this->handle->current();
-        if ($line === false) {
+        if ($line === false || trim($line) === '') {
             $this->task = null;
+
+            // End of file reached: all tasks from the metadata line must have been read
+            if ($this->readTasks !== $this->numberOfTasks) {
+                throw new Exception(sprintf(
+                    'Task file "%s" is incomplete: %d of %d tasks read.',
+                    $this->handle->getPathname(),
+                    $this->readTasks,
+                    $this->numberOfTasks
+                ));
+            }
+
             return;
         }
 
-        $task = unserialize(trim($line));
-        if (!$task) {
-            $this->task = null;
-            return;
+        $data = base64_decode(trim($line), true);
+        $task = ($data !== false) ? @unserialize($data, ['allowed_classes' => [RuleTask::class, RuleItemTask::class]]) : false;
+        if (!($task instanceof RuleTask) && !($task instanceof RuleItemTask)) {
+            throw new Exception(sprintf(
+                'Task file "%s" contains an invalid task in line %d.',
+                $this->handle->getPathname(),
+                $this->handle->key() + 1
+            ));
         }
 
         $this->task = $task;
+        $this->readTasks++;
     }
 
     protected function readMetadata(): void
