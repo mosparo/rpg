@@ -108,69 +108,68 @@ class GenerateRulePackageCommand extends Command
         $destination = new TaskFileElement($profile['paths']['task_file'] ?? $profileFilePath . '.rptasks');
         $rulePackageContext->setDestination($destination);
 
-        if ($input->getOption('outputOnly') && !$destination->valid()) {
-            $consoleLogger->critical('The command was started with -o, output only, but the task file is not valid. Does it exist?');
-            return Command::FAILURE;
-        }
-
-        // We do not create the tasks if the output only option is set.
-        if (!$input->getOption('outputOnly') || !$destination->valid()) {
-            $destination->resetTaskFile();
-
-            foreach ($profile['input'] as $idx => $inputProfile) {
-                $cliOutputHelper->writeln('input', sprintf('Process input %s', $inputProfile['identifier'] ?? $idx), 'green');
-
-                $type = $this->typeManager->getInputType($inputProfile['type'] ?? null);
-
-                $ruleContext = $type->prepareRuleContext($rulePackageContext, $inputProfile);
-
-                $this->mainProcessor->process($ruleContext, $type->getProcessors());
+        try {
+            if ($input->getOption('outputOnly') && !$destination->valid()) {
+                $consoleLogger->critical('The command was started with -o, output only, but the task file is not valid. Does it exist?');
+                return Command::FAILURE;
             }
 
-            // Store the new list of UUIDs
-            $destination->finalizeTasksFile();
-            $this->uuidHelper->storeNewUuidIndex();
-        } else {
-            $cliOutputHelper->writeln('input', 'Inputs are skipped as requested.', 'green');
-        }
+            // We do not create the tasks if the output only option is set.
+            if (!$input->getOption('outputOnly') || !$destination->valid()) {
+                $destination->resetTaskFile();
 
-        // Abort the generating process if an error occurred and the option to abort is set
-        if (($profile['abort_on_error'] ?? true) && $consoleLogger->hasErrored()) {
-            // Cleanup
+                foreach ($profile['input'] as $idx => $inputProfile) {
+                    $cliOutputHelper->writeln('input', sprintf('Process input %s', $inputProfile['identifier'] ?? $idx), 'green');
+
+                    $type = $this->typeManager->getInputType($inputProfile['type'] ?? null);
+
+                    $ruleContext = $type->prepareRuleContext($rulePackageContext, $inputProfile);
+
+                    $this->mainProcessor->process($ruleContext, $type->getProcessors());
+                }
+
+                // Store the new list of UUIDs
+                $destination->finalizeTasksFile();
+                $this->uuidHelper->storeNewUuidIndex();
+            } else {
+                $cliOutputHelper->writeln('input', 'Inputs are skipped as requested.', 'green');
+            }
+
+            // Abort the generating process if an error occurred and the option to abort is set
+            if (($profile['abort_on_error'] ?? true) && $consoleLogger->hasErrored()) {
+                return Command::FAILURE;
+            }
+
+            $output->writeln([
+                '',
+                ' ' . str_pad('Tasks:', 10) . $destination->getNumberOfTasks(),
+                '',
+                ' Rule package tasks prepared. Processing outputs...',
+                '',
+            ]);
+
+            // Process the configured outputs
+            foreach ($profile['output'] as $idx => $outputProfile) {
+                $cliOutputHelper->writeln('output', sprintf('Process output %s', $outputProfile['identifier'] ?? $idx));
+                $type = $this->typeManager->getOutputType($outputProfile['type'] ?? null);
+
+                $outputContext = $type->prepareOutputContext($rulePackageContext, $outputProfile);
+
+                $outputContext->setCliOutputHelper($cliOutputHelper);
+
+                $this->mainProcessor->process($outputContext, $type->getProcessors());
+            }
+
+            $output->writeln([
+                'Profile processed.',
+                '',
+            ]);
+
+            return Command::SUCCESS;
+        } finally {
+            // Remove the temporary files, also if a processor throws an exception
             $this->cleanupTemporaryFiles($rulePackageContext);
-
-            return Command::FAILURE;
         }
-
-        $output->writeln([
-            '',
-            ' ' . str_pad('Tasks:', 10) . $destination->getNumberOfTasks(),
-            '',
-            ' Rule package tasks prepared. Processing outputs...',
-            '',
-        ]);
-
-        // Process the configured outputs
-        foreach ($profile['output'] as $idx => $outputProfile) {
-            $cliOutputHelper->writeln('output', sprintf('Process output %s', $outputProfile['identifier'] ?? $idx));
-            $type = $this->typeManager->getOutputType($outputProfile['type'] ?? null);
-
-            $outputContext = $type->prepareOutputContext($rulePackageContext, $outputProfile);
-
-            $outputContext->setCliOutputHelper($cliOutputHelper);
-
-            $this->mainProcessor->process($outputContext, $type->getProcessors());
-        }
-
-        // Cleanup
-        $this->cleanupTemporaryFiles($rulePackageContext);
-
-        $output->writeln([
-            'Profile processed.',
-            '',
-        ]);
-
-        return Command::SUCCESS;
     }
 
     protected function preparePath($path): string
