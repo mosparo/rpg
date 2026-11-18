@@ -1,7 +1,7 @@
 name: Build PHAR
 on:
-    push:
-        tags: ['v*']
+    release:
+        types: [published]
 
 permissions:
     contents: write
@@ -43,4 +43,3 @@ jobs:
               uses: softprops/action-gh-release@v2
               with:
                   files: build/rpg.phar
-                  prerelease: ${{ contains(github.ref_name, '-') }}
