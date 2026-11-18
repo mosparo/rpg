@@ -113,7 +113,7 @@ class DownloadFileProcessor implements ProcessorInterface
         curl_setopt($curlHandle, CURLOPT_TIMEOUT, -1);
         curl_setopt($curlHandle, CURLOPT_VERBOSE, false);
 
-        if ($options['verify_ssl'] ?? true) {
+        if (!($options['verify_ssl'] ?? true)) {
             curl_setopt($curlHandle, CURLOPT_SSL_VERIFYHOST, false);
             curl_setopt($curlHandle, CURLOPT_SSL_VERIFYPEER, false);
         }
