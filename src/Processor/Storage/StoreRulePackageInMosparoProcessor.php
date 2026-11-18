@@ -4,6 +4,7 @@ namespace MosparoRpg\Processor\Storage;
 
 use DateTime;
 use DateTimeInterface;
+use Mosparo\ApiClient\Client;
 use Mosparo\ApiClient\Exception;
 use MosparoRpg\Cli\ProgressBarFormat;
 use MosparoRpg\Context\ContextInterface;
@@ -169,14 +170,12 @@ class StoreRulePackageInMosparoProcessor implements ProcessorInterface
 
             $apiTasksCounter++;
             if ($apiTasksCounter >= $maxTasks || $counter >= $rpContext->getDestination()->getNumberOfTasks()) {
-                try {
-                    $mosparoApiClient->batchUpdateRulePackage($rulePackageId, $apiTasks);
-
-                    $apiTasks = [];
-                    $apiTasksCounter = 0;
-                } catch (Exception) {
+                if (!$this->sendBatch($mosparoApiClient, $rulePackageId, $apiTasks, $mainProcessor)) {
                     return false;
                 }
+
+                $apiTasks = [];
+                $apiTasksCounter = 0;
             }
         }
 
@@ -223,14 +222,12 @@ class StoreRulePackageInMosparoProcessor implements ProcessorInterface
                 }
 
                 if ($apiTasksCounter >= $maxTasks) {
-                    try {
-                        $mosparoApiClient->batchUpdateRulePackage($rulePackageId, $apiTasks);
-
-                        $apiTasks = [];
-                        $apiTasksCounter = 0;
-                    } catch (Exception) {
+                    if (!$this->sendBatch($mosparoApiClient, $rulePackageId, $apiTasks, $mainProcessor)) {
                         return false;
                     }
+
+                    $apiTasks = [];
+                    $apiTasksCounter = 0;
                 }
             }
 
@@ -240,15 +237,38 @@ class StoreRulePackageInMosparoProcessor implements ProcessorInterface
         }
 
         // Send the last tasks
-        if ($apiTasks) {
-            try {
-                $mosparoApiClient->batchUpdateRulePackage($rulePackageId, $apiTasks);
-            } catch (Exception) {
-                return false;
-            }
+        if ($apiTasks && !$this->sendBatch($mosparoApiClient, $rulePackageId, $apiTasks, $mainProcessor)) {
+            return false;
         }
 
         $progressBar->finish();
+
+        return true;
+    }
+
+    /**
+     * Sends the tasks to mosparo and logs all problems. Returns false if the batch failed as a whole.
+     */
+    protected function sendBatch(Client $client, int $rulePackageId, array $tasks, MainProcessor $mainProcessor): bool
+    {
+        try {
+            $result = $client->batchUpdateRulePackage($rulePackageId, $tasks);
+        } catch (Exception $e) {
+            $mainProcessor->getLogger()->error(sprintf('Sending the tasks to mosparo failed: %s', $e->getMessage()));
+
+            return false;
+        }
+
+        // Single tasks can be rejected by mosparo without failing the whole batch
+        foreach ($result->getErrors() as $error) {
+            $mainProcessor->getLogger()->error(sprintf('mosparo rejected a task: %s', $error));
+        }
+
+        if (!$result->isSuccessful()) {
+            $mainProcessor->getLogger()->error('mosparo reported that the batch was not processed successfully.');
+
+            return false;
+        }
 
         return true;
     }
