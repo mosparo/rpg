@@ -1,0 +1,22 @@
+name: Automated testing
+on: [push]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: php-actions/composer@v6
+        with:
+          php_version: "8.2"
+          php_extensions: zip zlib curl fileinfo
+          memory_limit: 256M
+
+      - uses: php-actions/phpunit@v4
+        with:
+          php_version: "8.2"
+          php_extensions: zip zlib curl fileinfo
+          memory_limit: 256M
+          configuration: phpunit.dist.xml

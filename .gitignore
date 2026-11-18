@@ -11,3 +11,7 @@
 ###< symfony/framework-bundle ###
 
 /profiles/
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
