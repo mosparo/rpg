@@ -11,6 +11,8 @@ class HashIndexHelper
 
     protected array $hashIndex = [];
 
+    protected bool $loaded = false;
+
     public function __construct(SplFileObject $hashIndexFile)
     {
         $this->hashIndexFile = $hashIndexFile;
@@ -18,7 +20,7 @@ class HashIndexHelper
 
     public function findIndexHashForUuid(UuidV4 $uuid): ?string
     {
-        if (!$this->hashIndex) {
+        if (!$this->loaded) {
             $this->buildIndex();
         }
 
@@ -33,11 +35,17 @@ class HashIndexHelper
 
     public function getRemainingHashes(): array
     {
+        if (!$this->loaded) {
+            $this->buildIndex();
+        }
+
         return $this->hashIndex;
     }
 
     protected function buildIndex(): void
     {
+        $this->loaded = true;
+
         $this->hashIndexFile->rewind();
         while (!$this->hashIndexFile->eof()) {
             $line = $this->hashIndexFile->fgets();
