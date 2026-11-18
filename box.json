@@ -5,7 +5,8 @@
     "directories": [
         "config",
         "src",
-        "var/cache/prod"
+        "var/cache/prod",
+        "vendor"
     ],
     "files": [
         ".env",
