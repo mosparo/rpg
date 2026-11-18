@@ -54,7 +54,11 @@ class ProgressBar
     public function finish(): void
     {
         if ($this->max) {
+            // Reaching the max always draws the last frame
             $this->advance($this->max);
+        } else {
+            // Without max, the last frame is not drawn if the step did not change (Symfony 7.4+), but the message may have
+            $this->progressBar->display();
         }
         $this->progressBar->finish();
         $this->section->writeln('');
