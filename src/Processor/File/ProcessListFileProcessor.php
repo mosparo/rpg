@@ -29,9 +29,9 @@ class ProcessListFileProcessor implements ProcessorInterface
 
         $fileHandle = fopen($context->getSource()->getFilePath(), 'r');
 
-        while (($line = fgets($fileHandle))) {
+        while (($line = fgets($fileHandle)) !== false) {
             $line = trim($line);
-            if (!$line) {
+            if ($line === '') {
                 continue;
             }
 
