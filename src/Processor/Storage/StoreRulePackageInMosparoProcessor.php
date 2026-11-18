@@ -15,6 +15,7 @@ use MosparoRpg\Processor\ProcessorInterface;
 use MosparoRpg\Task\RuleItemTask;
 use MosparoRpg\Task\RuleTask;
 use MosparoRpg\Trait\KeyTrait;
+use MosparoRpg\Util\TemporaryFileUtil;
 use SplFileObject;
 use Symfony\Component\Uid\UuidV4;
 
@@ -64,7 +65,7 @@ class StoreRulePackageInMosparoProcessor implements ProcessorInterface
             'Download hash index from mosparo...',
             0
         );
-        $hashIndexFilePath = tempnam(sys_get_temp_dir(), 'rphi');
+        $hashIndexFilePath = TemporaryFileUtil::createTemporaryFile($rpContext, 'rphi');
         $hashIndexSplFile = new SplFileObject($hashIndexFilePath, 'c+');
         $bytes = 0;
         $previousBytes = 0;
