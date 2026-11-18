@@ -10,13 +10,13 @@ jobs:
 
       - uses: php-actions/composer@v6
         with:
-          php_version: "8.2"
+          php_version: "8.4"
           php_extensions: zip zlib curl fileinfo
           memory_limit: 256M
 
       - uses: php-actions/phpunit@v4
         with:
-          php_version: "8.2"
+          php_version: "8.4"
           php_extensions: zip zlib curl fileinfo
           memory_limit: 256M
           configuration: phpunit.dist.xml
