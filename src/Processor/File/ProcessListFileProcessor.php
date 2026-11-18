@@ -30,9 +30,14 @@ class ProcessListFileProcessor implements ProcessorInterface
         $fileHandle = fopen($context->getSource()->getFilePath(), 'r');
 
         while (($line = fgets($fileHandle))) {
+            $line = trim($line);
+            if (!$line) {
+                continue;
+            }
+
             $ruleItemContext = (new RuleItemContext($context))
                 ->setType($context->getItemOptions()['type'] ?? '')
-                ->setValue(trim($line))
+                ->setValue($line)
                 ->setRating($context->getItemOptions()['rating'] ?? 1);
 
             $mainProcessor->process($ruleItemContext, $context->getInputType()->getRuleItemProcessors());
