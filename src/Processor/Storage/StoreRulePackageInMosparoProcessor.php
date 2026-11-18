@@ -49,12 +49,35 @@ class StoreRulePackageInMosparoProcessor implements ProcessorInterface
         $mosparoHost = $context->getOption('host', null);
         $mosparoPublicKey = $context->getOption('public_key', null);
         $mosparoPrivateKey = $context->getOption('private_key', null);
+        $rulePackageId = $context->getOption('rule_package_id', null);
+
+        $missingOptions = [];
+        foreach (['host' => $mosparoHost, 'public_key' => $mosparoPublicKey, 'private_key' => $mosparoPrivateKey] as $key => $value) {
+            if (!is_string($value) || $value === '') {
+                $missingOptions[] = $key;
+            }
+        }
+
+        if (!is_int($rulePackageId) && !ctype_digit((string) $rulePackageId)) {
+            $missingOptions[] = 'rule_package_id';
+        }
+
+        if ($missingOptions) {
+            $mainProcessor->getLogger()->error(sprintf(
+                'Output "%s": the options %s are missing or invalid.',
+                $context->getIdentifier(),
+                implode(', ', $missingOptions)
+            ));
+
+            return false;
+        }
+
         $options = [
             'verify' => $context->getOption('verify_ssl', true),
         ];
         $mosparoApiClient = $this->clientFactory->getClient($mosparoHost, $mosparoPublicKey, $mosparoPrivateKey, $options);
 
-        $rulePackageId = $context->getOption('rule_package_id', null);
+        $rulePackageId = intval($rulePackageId);
         $maxTasks = 1000;
         $apiTasksCounter = 0;
 

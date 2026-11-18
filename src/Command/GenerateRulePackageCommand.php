@@ -88,8 +88,18 @@ class GenerateRulePackageCommand extends Command
         // Load the profile
         $profile = Yaml::parseFile($profileFilePath);
 
+        // Check the profile before anything is processed
+        $profileErrors = $this->validateProfile($profile);
+        if ($profileErrors) {
+            foreach ($profileErrors as $profileError) {
+                $consoleLogger->critical(sprintf('Invalid profile: %s', $profileError));
+            }
+
+            return Command::FAILURE;
+        }
+
         $output->writeln([
-            ' ' . str_pad('Name:', 10) . $profile['name'],
+            ' ' . str_pad('Name:', 10) . ($profile['name'] ?? 'Unnamed rule package'),
             ' ' . str_pad('File:', 10) . $profileFilePath,
             '',
         ]);
@@ -170,6 +180,40 @@ class GenerateRulePackageCommand extends Command
             // Remove the temporary files, also if a processor throws an exception
             $this->cleanupTemporaryFiles($rulePackageContext);
         }
+    }
+
+    /**
+     * Checks the structure of the profile and returns a list of errors (empty if the profile is valid).
+     */
+    protected function validateProfile(mixed $profile): array
+    {
+        if (!is_array($profile)) {
+            return ['The profile is empty or not a YAML mapping.'];
+        }
+
+        $errors = [];
+        foreach (['input', 'output'] as $section) {
+            if (!is_array($profile[$section] ?? null) || !$profile[$section]) {
+                $errors[] = sprintf('The section "%s" is missing or empty.', $section);
+                continue;
+            }
+
+            foreach ($profile[$section] as $idx => $sectionProfile) {
+                $typeKey = $sectionProfile['type'] ?? null;
+                $type = ($section === 'input') ? $this->typeManager->getInputType($typeKey) : $this->typeManager->getOutputType($typeKey);
+
+                if ($type === null) {
+                    $errors[] = sprintf(
+                        '%s "%s" has an unknown or missing type "%s".',
+                        ucfirst($section),
+                        $sectionProfile['identifier'] ?? $idx,
+                        is_scalar($typeKey) ? $typeKey : ''
+                    );
+                }
+            }
+        }
+
+        return $errors;
     }
 
     protected function preparePath($path): string

@@ -41,6 +41,12 @@ class StoreRulePackageInFileProcessor implements ProcessorInterface
         $filePath = $context->getOption('file_path', null);
         $format = $context->getOption('format', 'json');
 
+        if (!is_string($filePath) || $filePath === '') {
+            $mainProcessor->getLogger()->error(sprintf('Output "%s": the option file_path is missing or invalid.', $context->getIdentifier()));
+
+            return false;
+        }
+
         $fullPath = Path::makeAbsolute(Path::canonicalize($filePath), $rpContext->getProfileDirectory()->getPath());
 
         $directory = Path::getDirectory($fullPath);
