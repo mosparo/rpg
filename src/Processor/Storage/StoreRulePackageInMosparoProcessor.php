@@ -4,11 +4,11 @@ namespace MosparoRpg\Processor\Storage;
 
 use DateTime;
 use DateTimeInterface;
-use Mosparo\ApiClient\Client;
 use Mosparo\ApiClient\Exception;
 use MosparoRpg\Cli\ProgressBarFormat;
 use MosparoRpg\Context\ContextInterface;
 use MosparoRpg\Context\OutputContext;
+use MosparoRpg\Factory\MosparoApiClientFactory;
 use MosparoRpg\Helper\HashIndexHelper;
 use MosparoRpg\Processor\MainProcessor;
 use MosparoRpg\Processor\ProcessorInterface;
@@ -23,6 +23,13 @@ class StoreRulePackageInMosparoProcessor implements ProcessorInterface
     const KEY = 'store_rule_package_in_mosparo';
 
     use KeyTrait;
+
+    protected MosparoApiClientFactory $clientFactory;
+
+    public function __construct(MosparoApiClientFactory $clientFactory)
+    {
+        $this->clientFactory = $clientFactory;
+    }
 
     public function isApplicable(ContextInterface $context): bool
     {
@@ -43,7 +50,7 @@ class StoreRulePackageInMosparoProcessor implements ProcessorInterface
         $options = [
             'verify' => $context->getOption('verify_ssl', true),
         ];
-        $mosparoApiClient = new Client($mosparoHost, $mosparoPublicKey, $mosparoPrivateKey, $options);
+        $mosparoApiClient = $this->clientFactory->getClient($mosparoHost, $mosparoPublicKey, $mosparoPrivateKey, $options);
 
         $rulePackageId = $context->getOption('rule_package_id', null);
         $maxTasks = 1000;
