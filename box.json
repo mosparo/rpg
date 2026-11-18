@@ -1,0 +1,20 @@
+{
+    "$schema": "https://raw.githubusercontent.com/box-project/box/main/res/schema.json",
+    "main": "bin/rpg",
+    "output": "build/rpg.phar",
+    "directories": [
+        "config",
+        "src",
+        "var/cache/prod"
+    ],
+    "files": [
+        ".env",
+        "composer.json"
+    ],
+    "exclude-dev-files": true,
+    "compression": "GZ",
+    "compactors": [
+        "KevinGH\\Box\\Compactor\\Php"
+    ],
+    "check-requirements": true
+}

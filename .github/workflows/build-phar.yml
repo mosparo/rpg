@@ -1,0 +1,46 @@
+name: Build PHAR
+on:
+    push:
+        tags: ['v*']
+
+permissions:
+    contents: write
+
+jobs:
+    build-phar:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  extensions: zip, zlib, curl, fileinfo
+                  ini-values: phar.readonly=0
+                  tools: box
+
+            - name: Install dependencies without dev packages
+              run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+            - name: Compile the production container
+              run: APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup
+
+            - name: Build the PHAR
+              run: box compile
+
+            - name: Smoke test and version check
+              run: |
+                  php build/rpg.phar --help
+                  expected="${GITHUB_REF_NAME#v}"
+                  actual="$(php build/rpg.phar --version | awk '{print $5}')"
+                  if [ "$actual" != "$expected" ]; then
+                      echo "::error::Tag $GITHUB_REF_NAME does not match Kernel::RPG_VERSION ($actual)"
+                      exit 1
+                  fi
+
+            - name: Attach the PHAR to the release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: build/rpg.phar
+                  prerelease: ${{ contains(github.ref_name, '-') }}

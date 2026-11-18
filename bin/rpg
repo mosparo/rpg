@@ -1,0 +1,29 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Entry point for the PHAR. Runs the rule package generator directly:
+ *
+ *   php rpg.phar path/to/profile.yaml [--tempdir=...] [-o]
+ */
+
+use MosparoRpg\Kernel;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Dotenv\Dotenv;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// The PHAR always runs in production mode, without debug. The container is compiled during the build.
+$_SERVER['APP_ENV'] = $_ENV['APP_ENV'] = 'prod';
+$_SERVER['APP_DEBUG'] = $_ENV['APP_DEBUG'] = '0';
+
+(new Dotenv())->bootEnv(dirname(__DIR__) . '/.env');
+
+$kernel = new Kernel('prod', false);
+
+$application = new Application($kernel);
+$application->setName('mosparo Rule Package Generator');
+$application->setVersion(Kernel::RPG_VERSION);
+$application->setDefaultCommand('rpg:generate-rule-package', true);
+$application->run(new ArgvInput());
