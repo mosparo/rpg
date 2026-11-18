@@ -38,21 +38,35 @@ class ProcessCsvFileProcessor implements ProcessorInterface
 
         $rowCounter = 0;
         while (($line = fgetcsv($fileHandle, null, $context->getSource()->getOption('separator', ','), '"', '\\'))) {
-            if ($rowCounter < $skipRows) {
-                $rowCounter++;
+            $rowCounter++;
+
+            if ($rowCounter <= $skipRows) {
                 continue;
             }
 
-            $filtered = array_filter($line);
-            if (empty($filtered)) {
-                $rowCounter++;
+            $type = trim($line[$itemColumn] ?? '');
+            $value = trim($line[$valueColumn] ?? '');
+            $rating = trim($line[$ratingColumn] ?? '');
+
+            // Ignore empty rows (also rows with only whitespace or separators)
+            if ($type === '' && $value === '' && $rating === '') {
+                continue;
+            }
+
+            if ($type === '' || $value === '') {
+                $mainProcessor->getLogger()->warning(sprintf(
+                    'Row %d in "%s" has no type or no value and is ignored.',
+                    $rowCounter,
+                    $context->getSource()->getFilePath()
+                ));
                 continue;
             }
 
             $ruleItemContext = (new RuleItemContext($context))
-                ->setType(trim($line[$itemColumn]))
-                ->setValue(trim($line[$valueColumn]))
-                ->setRating(floatval($line[$ratingColumn]));
+                ->setType($type)
+                ->setValue($value)
+                ->setRating(($rating !== '') ? floatval($rating) : 1.0)
+            ;
 
             $mainProcessor->process($ruleItemContext, $context->getInputType()->getRuleItemProcessors());
         }
