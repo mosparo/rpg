@@ -23,7 +23,7 @@ class UuidHelper
         return $this;
     }
 
-    public function findUuidForIdentifier(string $identifier, ?string $type = null): ?Uuid
+    public function findUuidForIdentifier(string $identifier, string $type): ?Uuid
     {
         $this->openUuidFile();
         $identifier = $this->prepareIdentifier($identifier, $type);
@@ -51,23 +51,6 @@ class UuidHelper
         foreach ($this->newUuids as $identifier => $uuid) {
             $this->uuidFile->fwrite(sprintf('%s::%s', $identifier, $uuid) . PHP_EOL);
         }
-    }
-
-    public function determineType(string $identifier): ?string
-    {
-        if (!str_starts_with($identifier, 'r/') && !str_starts_With($identifier, 'i/')) {
-            return null;
-        }
-
-        return substr($identifier, 0, 1);
-    }
-
-    public function getUuidChanges(): array
-    {
-        $deleted = array_diff(array_keys($this->uuids), array_keys($this->newUuids));
-        $added = array_diff(array_keys($this->newUuids), array_keys($this->uuids));
-
-        return [$deleted, $added];
     }
 
     protected function openUuidFile(): void
@@ -99,16 +82,8 @@ class UuidHelper
         }
     }
 
-    protected function prepareIdentifier(string $identifier, ?string $type = null): string
+    protected function prepareIdentifier(string $identifier, string $type): string
     {
-        if (str_starts_with($identifier, 'r/') || str_starts_with($identifier, 'i/')) {
-            return $identifier;
-        }
-
-        if (!$type) {
-            $type = $this->determineType($identifier);
-        }
-
         return sprintf('%s/%s', $type, md5($identifier));
     }
 }

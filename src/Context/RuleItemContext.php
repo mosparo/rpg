@@ -76,7 +76,7 @@ class RuleItemContext implements ContextInterface
 
     public function buildIdentifier(): string
     {
-        return sprintf('%s/%s_%s', substr($this->ruleContext->buildIdentifier(), 2), $this->type, $this->value);
+        return sprintf('%s/%s_%s', $this->ruleContext->buildIdentifier(), $this->type, $this->value);
     }
 
     public function toArray(): array
