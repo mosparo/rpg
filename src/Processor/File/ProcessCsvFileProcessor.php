@@ -37,8 +37,14 @@ class ProcessCsvFileProcessor implements ProcessorInterface
         $ratingColumn = $mapping['rating'] ?? 2;
 
         $rowCounter = 0;
-        while (($line = fgetcsv($fileHandle, null, $context->getSource()->getOption('separator', ',')))) {
+        while (($line = fgetcsv($fileHandle, null, $context->getSource()->getOption('separator', ','), '"', '\\'))) {
             if ($rowCounter < $skipRows) {
+                $rowCounter++;
+                continue;
+            }
+
+            $filtered = array_filter($line);
+            if (empty($filtered)) {
                 $rowCounter++;
                 continue;
             }
