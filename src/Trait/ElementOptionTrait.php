@@ -4,7 +4,7 @@ namespace MosparoRpg\Trait;
 
 trait ElementOptionTrait
 {
-    protected array $options;
+    protected array $options = [];
 
     public function setOptions(array $options): self
     {
