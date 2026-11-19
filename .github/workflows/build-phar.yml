@@ -31,9 +31,12 @@ jobs:
 
             - name: Smoke test and version check
               run: |
-                  php build/rpg.phar --help
+                  # Run a copy outside the checkout with phar.readonly=1, as on a real server.
+                  cp build/rpg.phar "$RUNNER_TEMP/rpg.phar"
+                  cd "$RUNNER_TEMP"
+                  php -d phar.readonly=1 rpg.phar --help
                   expected="${GITHUB_REF_NAME#v}"
-                  actual="$(php build/rpg.phar --version | awk '{print $5}')"
+                  actual="$(php -d phar.readonly=1 rpg.phar --version | awk '{print $5}')"
                   if [ "$actual" != "$expected" ]; then
                       echo "::error::Tag $GITHUB_REF_NAME does not match Kernel::RPG_VERSION ($actual)"
                       exit 1

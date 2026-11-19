@@ -9,8 +9,7 @@
         "vendor"
     ],
     "files": [
-        ".env",
-        "composer.json"
+        ".env"
     ],
     "exclude-dev-files": true,
     "compression": "GZ",
