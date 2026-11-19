@@ -9,7 +9,7 @@ class Kernel extends BaseKernel
 {
     use MicroKernelTrait;
 
-    public const RPG_VERSION = '1.0.0-beta.2';
+    public const RPG_VERSION = '1.0.0-beta.3';
 
     /**
      * The project directory is fixed to the parent of src/ so that it does not
