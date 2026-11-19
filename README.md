@@ -54,8 +54,11 @@ This simple example profile will take the list from `input/test-list.txt` and bu
 version: 1.0
 name: Test rule package
 refresh_interval: 3600
-uuid_index_path: ~
+paths:
+  task_file: ~
+  uuid_index_file: ~
 abort_on_error:
+license_file: ~
 
 input:
   - type: list
