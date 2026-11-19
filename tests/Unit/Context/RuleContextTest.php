@@ -24,6 +24,7 @@ class RuleContextTest extends TestCase
         $this->assertNull($context->getIdentifier());
         $this->assertNull($context->getType());
         $this->assertNull($context->getName());
+        $this->assertNull($context->getDescription());
         $this->assertNull($context->getSpamRatingFactor());
         $this->assertSame([], $context->getItemOptions());
         $this->assertNull($context->getSource());
@@ -42,6 +43,7 @@ class RuleContextTest extends TestCase
             ->setIdentifier('id')
             ->setType('word')
             ->setName('Bad words')
+            ->setDescription('Words that are often used in spam.')
             ->setSpamRatingFactor(2.5)
             ->setItemOptions(['type' => 'text', 'rating' => 3])
             ->setSource($source)
@@ -53,6 +55,7 @@ class RuleContextTest extends TestCase
         $this->assertSame('id', $context->getIdentifier());
         $this->assertSame('word', $context->getType());
         $this->assertSame('Bad words', $context->getName());
+        $this->assertSame('Words that are often used in spam.', $context->getDescription());
         $this->assertSame(2.5, $context->getSpamRatingFactor());
         $this->assertSame(['type' => 'text', 'rating' => 3], $context->getItemOptions());
         $this->assertSame($source, $context->getSource());

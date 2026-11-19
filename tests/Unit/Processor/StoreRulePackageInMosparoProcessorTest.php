@@ -87,11 +87,11 @@ class StoreRulePackageInMosparoProcessorTest extends TestCase
     }
 
     /**
-     * Same hash calculation as mosparo (RulePackageRuleCache::getHash(), description is always empty).
+     * Same hash calculation as mosparo (RulePackageRuleCache::getHash()).
      */
-    private function ruleLine(string $uuid, string $type, string $name, float $factor, int $id): string
+    private function ruleLine(string $uuid, string $type, string $name, ?string $description, float $factor, int $id): string
     {
-        return sprintf('%s::r/%s/%d', $uuid, md5($uuid . $type . $name . $factor), $id) . "\n";
+        return sprintf('%s::r/%s/%d', $uuid, md5($uuid . $type . $name . $description . $factor), $id) . "\n";
     }
 
     /**
@@ -169,7 +169,7 @@ class StoreRulePackageInMosparoProcessorTest extends TestCase
         $this->assertSame([
             'uuid' => self::RULE_A,
             'name' => 'Domains',
-            'description' => '',
+            'description' => null,
             'type' => 'email',
             'spamRatingFactor' => 1.5,
         ], $batch[1]['data']);
@@ -185,7 +185,7 @@ class StoreRulePackageInMosparoProcessorTest extends TestCase
     public function testUnchangedEntriesAreNotSentAgain(): void
     {
         $this->writeTasks($this->defaultTasks());
-        $this->hashIndex = $this->ruleLine(self::RULE_A, 'email', 'Domains', 1.5, 1)
+        $this->hashIndex = $this->ruleLine(self::RULE_A, 'email', 'Domains', null, 1.5, 1)
             . $this->itemLine(self::ITEM_1, 'text', 'a.com', 2.0, 10)
             . $this->itemLine(self::ITEM_2, 'text', 'b.com', 3.0, 11);
 
@@ -195,10 +195,40 @@ class StoreRulePackageInMosparoProcessorTest extends TestCase
         $this->assertSame(['update_rule_package'], $this->taskTypes($this->batches[0]));
     }
 
+    public function testUnchangedRuleWithDescriptionIsNotSentAgain(): void
+    {
+        $this->writeTasks([
+            new RuleTask(self::RULE_A, 'email', 'Domains', 'Known spam domains', 1.5),
+            new RuleItemTask(self::RULE_A, self::ITEM_1, 'text', 'a.com', 2.0),
+        ]);
+        $this->hashIndex = $this->ruleLine(self::RULE_A, 'email', 'Domains', 'Known spam domains', 1.5, 1)
+            . $this->itemLine(self::ITEM_1, 'text', 'a.com', 2.0, 10);
+
+        $this->assertTrue($this->runProcessor());
+
+        $this->assertSame(['update_rule_package'], $this->taskTypes($this->batches[0]));
+    }
+
+    public function testChangedDescriptionIsSentAgain(): void
+    {
+        $this->writeTasks([
+            new RuleTask(self::RULE_A, 'email', 'Domains', 'New description', 1.5),
+            new RuleItemTask(self::RULE_A, self::ITEM_1, 'text', 'a.com', 2.0),
+        ]);
+        $this->hashIndex = $this->ruleLine(self::RULE_A, 'email', 'Domains', 'Old description', 1.5, 1)
+            . $this->itemLine(self::ITEM_1, 'text', 'a.com', 2.0, 10);
+
+        $this->assertTrue($this->runProcessor());
+
+        $batch = $this->batches[0];
+        $this->assertSame(['update_rule_package', 'store_rule'], $this->taskTypes($batch));
+        $this->assertSame('New description', $batch[1]['data']['description']);
+    }
+
     public function testChangedItemIsSentAgain(): void
     {
         $this->writeTasks($this->defaultTasks());
-        $this->hashIndex = $this->ruleLine(self::RULE_A, 'email', 'Domains', 1.5, 1)
+        $this->hashIndex = $this->ruleLine(self::RULE_A, 'email', 'Domains', null, 1.5, 1)
             . $this->itemLine(self::ITEM_1, 'text', 'a.com', 2.0, 10)
             . $this->itemLine(self::ITEM_2, 'text', 'b.com', 1.0, 11); // rating changed
 
@@ -212,8 +242,8 @@ class StoreRulePackageInMosparoProcessorTest extends TestCase
     public function testOutdatedEntriesAreRemovedItemsBeforeRules(): void
     {
         $this->writeTasks($this->defaultTasks());
-        $this->hashIndex = $this->ruleLine(self::OLD_RULE, 'email', 'Old', 1.0, 7)
-            . $this->ruleLine(self::RULE_A, 'email', 'Domains', 1.5, 1)
+        $this->hashIndex = $this->ruleLine(self::OLD_RULE, 'email', 'Old', null, 1.0, 7)
+            . $this->ruleLine(self::RULE_A, 'email', 'Domains', null, 1.5, 1)
             . $this->itemLine(self::ITEM_1, 'text', 'a.com', 2.0, 10)
             . $this->itemLine(self::ITEM_2, 'text', 'b.com', 3.0, 11)
             . $this->itemLine(self::OLD_ITEM, 'text', 'old.com', 1.0, 12);
@@ -229,7 +259,7 @@ class StoreRulePackageInMosparoProcessorTest extends TestCase
     public function testEmptyPackageRemovesEverythingInMosparo(): void
     {
         $this->writeTasks([]);
-        $this->hashIndex = $this->ruleLine(self::RULE_A, 'email', 'Domains', 1.5, 1)
+        $this->hashIndex = $this->ruleLine(self::RULE_A, 'email', 'Domains', null, 1.5, 1)
             . $this->itemLine(self::ITEM_1, 'text', 'a.com', 2.0, 10);
 
         $this->assertTrue($this->runProcessor());

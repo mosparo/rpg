@@ -73,6 +73,7 @@ class InputTypeTest extends TestCase
                 'identifier' => 'my-rule',
                 'type' => 'email',
                 'name' => 'Domains',
+                'description' => 'Known spam domains',
                 'spam_rating_factor' => 2.5,
                 'item' => ['type' => 'text', 'rating' => 3],
             ],
@@ -88,6 +89,7 @@ class InputTypeTest extends TestCase
         $this->assertSame('my-rule', $context->getIdentifier());
         $this->assertSame('email', $context->getType());
         $this->assertSame('Domains', $context->getName());
+        $this->assertSame('Known spam domains', $context->getDescription());
         $this->assertSame(2.5, $context->getSpamRatingFactor());
         $this->assertSame(['type' => 'text', 'rating' => 3], $context->getItemOptions());
         $this->assertSame($destination, $context->getDestination());
@@ -124,6 +126,7 @@ class InputTypeTest extends TestCase
         $this->assertNotEmpty($context->getIdentifier(), 'A unique identifier is generated when none is given.');
         $this->assertSame('', $context->getType());
         $this->assertSame('', $context->getName());
+        $this->assertNull($context->getDescription());
         $this->assertSame(1.0, $context->getSpamRatingFactor());
         $this->assertSame([], $context->getItemOptions());
     }

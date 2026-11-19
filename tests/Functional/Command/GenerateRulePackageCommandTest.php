@@ -113,10 +113,84 @@ class GenerateRulePackageCommandTest extends TestCase
         $this->assertSame('domain', $rule['type']);
         $this->assertSame(['spam.example', 'more-spam.example'], array_column($rule['items'], 'value'));
         $this->assertSame(['text', 'text'], array_column($rule['items'], 'type'));
+        $this->assertNull($rule['description']);
+        $this->assertArrayNotHasKey('license', $package);
 
         $this->assertFileExists($this->tmpPath('profile/output/package.json.sha256'));
         $this->assertFileExists($this->tmpPath('work/package.rptasks'));
         $this->assertFileExists($this->tmpPath('work/package.rpuuids'));
+    }
+
+    public function testDescriptionAndLicenseAreWritten(): void
+    {
+        $license = "MIT License\n\nCopyright (c) 2026 \"Example\"\n";
+        file_put_contents($this->tmpPath('profile/LICENSE'), $license);
+
+        $profile = $this->writeProfile(['license_file' => 'LICENSE']);
+        $data = Yaml::parseFile($profile);
+        $data['input'][0]['rule']['description'] = 'Domains that send "spam"';
+        file_put_contents($profile, Yaml::dump($data, 6));
+
+        $tester = $this->runCommand(['profile' => $profile, '--tempdir' => $this->tmpPath('work')]);
+
+        $this->assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+
+        $package = $this->readPackage();
+        $this->assertSame('Domains that send "spam"', $package['rules'][0]['description']);
+        $this->assertSame($license, $package['license']);
+    }
+
+    public function testMissingLicenseFileIsReportedBeforeProcessing(): void
+    {
+        $profile = $this->writeProfile(['license_file' => 'legal/LICENSE']);
+
+        $tester = $this->runCommand(['profile' => $profile, '--tempdir' => $this->tmpPath('work')]);
+
+        $this->assertSame(Command::FAILURE, $tester->getStatusCode());
+        $this->assertStringContainsString('License file "legal/LICENSE" not found or not readable.', $tester->getDisplay());
+        $this->assertStringContainsString($this->tmpPath('profile/legal/LICENSE'), $tester->getDisplay(), 'The resolved path helps to find the error.');
+        $this->assertFileDoesNotExist($this->tmpPath('work/package.rptasks'), 'Nothing must be processed.');
+        $this->assertFileDoesNotExist($this->tmpPath('profile/output/package.json'));
+    }
+
+    public function testMissingLicenseFileIsReportedWithOutputOnly(): void
+    {
+        $profile = $this->writeProfile();
+        $this->runCommand(['profile' => $profile, '--tempdir' => $this->tmpPath('work')]);
+        unlink($this->tmpPath('profile/output/package.json'));
+
+        $data = Yaml::parseFile($profile);
+        $data['license_file'] = 'LICENSE';
+        file_put_contents($profile, Yaml::dump($data, 6));
+
+        $tester = $this->runCommand(['profile' => $profile, '--tempdir' => $this->tmpPath('work'), '--outputOnly' => true]);
+
+        $this->assertSame(Command::FAILURE, $tester->getStatusCode());
+        $this->assertStringContainsString('License file "LICENSE" not found or not readable.', $tester->getDisplay());
+        $this->assertFileDoesNotExist($this->tmpPath('profile/output/package.json'));
+    }
+
+    public function testDirectoryAsLicenseFileIsReported(): void
+    {
+        mkdir($this->tmpPath('profile/LICENSE'));
+        $profile = $this->writeProfile(['license_file' => 'LICENSE']);
+
+        $tester = $this->runCommand(['profile' => $profile, '--tempdir' => $this->tmpPath('work')]);
+
+        $this->assertSame(Command::FAILURE, $tester->getStatusCode());
+        $this->assertStringContainsString('License file "LICENSE" not found or not readable.', $tester->getDisplay());
+        $this->assertFileDoesNotExist($this->tmpPath('profile/output/package.json'));
+    }
+
+    public function testLicenseFileMustBeAString(): void
+    {
+        $profile = $this->writeProfile(['license_file' => ['LICENSE']]);
+
+        $tester = $this->runCommand(['profile' => $profile, '--tempdir' => $this->tmpPath('work')]);
+
+        $this->assertSame(Command::FAILURE, $tester->getStatusCode());
+        $this->assertStringContainsString('The option "license_file" must be a string', $tester->getDisplay());
+        $this->assertFileDoesNotExist($this->tmpPath('work/package.rptasks'));
     }
 
     public function testUuidsAreStableBetweenRuns(): void

@@ -46,6 +46,7 @@ class AppendProcessorsTest extends TestCase
         $rpContext = ContextFactory::rulePackageContext($this->tmpDir, $destination);
         $ruleContext = ContextFactory::ruleContext($rpContext)
             ->setUuid($ruleUuid = Uuid::v4())
+            ->setDescription('Rule description')
             ->setDestination($destination);
         $itemContext = (new RuleItemContext($ruleContext))
             ->setUuid($itemUuid = Uuid::v4())
@@ -61,7 +62,7 @@ class AppendProcessorsTest extends TestCase
         $tasks = iterator_to_array(new TaskFileElement($path), false);
 
         $this->assertEquals([
-            new RuleTask((string) $ruleUuid, 'email', 'Test rule', null, 1.5),
+            new RuleTask((string) $ruleUuid, 'email', 'Test rule', 'Rule description', 1.5),
             new RuleItemTask((string) $ruleUuid, (string) $itemUuid, 'text', 'example.com', 2.0),
         ], $tasks);
     }
