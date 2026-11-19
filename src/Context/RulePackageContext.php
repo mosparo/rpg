@@ -4,12 +4,15 @@ namespace MosparoRpg\Context;
 
 use MosparoRpg\Element\DirectoryElement;
 use MosparoRpg\Element\TaskFileElement;
+use Symfony\Component\Filesystem\Path;
 
 class RulePackageContext implements ContextInterface
 {
     protected ?string $name = null;
 
     protected ?int $refreshInterval = null;
+
+    protected ?string $licenseFile = null;
 
     protected ?DirectoryElement $profileDirectory = null;
 
@@ -43,6 +46,49 @@ class RulePackageContext implements ContextInterface
     public function getRefreshInterval(): ?int
     {
         return $this->refreshInterval;
+    }
+
+    public function setLicenseFile(?string $licenseFile): self
+    {
+        $this->licenseFile = $licenseFile;
+
+        return $this;
+    }
+
+    public function getLicenseFile(): ?string
+    {
+        return $this->licenseFile;
+    }
+
+    /**
+     * Returns the absolute path of the license file (relative paths are resolved against the profile directory),
+     * or null if no license file is configured.
+     */
+    public function getLicenseFilePath(): ?string
+    {
+        if (!$this->licenseFile) {
+            return null;
+        }
+
+        return Path::makeAbsolute(Path::canonicalize($this->licenseFile), $this->getProfileDirectory()->getPath());
+    }
+
+    public function isLicenseFileReadable(): bool
+    {
+        $path = $this->getLicenseFilePath();
+
+        return $path !== null && is_file($path) && is_readable($path);
+    }
+
+    public function readLicenseFile(): ?string
+    {
+        if (!$this->isLicenseFileReadable()) {
+            return null;
+        }
+
+        $content = file_get_contents($this->getLicenseFilePath());
+
+        return ($content !== false) ? $content : null;
     }
 
     public function setProfileDirectory(DirectoryElement $profileDirectory): self

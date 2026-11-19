@@ -112,7 +112,23 @@ class GenerateRulePackageCommand extends Command
             ->setName($profile['name'] ?? 'Unnamed rule package')
             ->setRefreshInterval($profile['refresh_interval'] ?? 86400)
             ->setProfileDirectory(new DirectoryElement(dirname($profileFilePath)))
-            ->setTemporaryDirectory(new DirectoryElement($temporaryDirectory));
+            ->setTemporaryDirectory(new DirectoryElement($temporaryDirectory))
+        ;
+
+        if ($profile['license_file'] ?? '') {
+            $rulePackageContext->setLicenseFile($profile['license_file']);
+
+            // Checked here and not in validateProfile(), so the path is resolved the same way as when the file is read
+            if (!$rulePackageContext->isLicenseFileReadable()) {
+                $consoleLogger->critical(sprintf(
+                    'Invalid profile: License file "%s" not found or not readable. Full path: "%s"',
+                    $rulePackageContext->getLicenseFile(),
+                    $rulePackageContext->getLicenseFilePath()
+                ));
+
+                return Command::FAILURE;
+            }
+        }
 
         // Create the destination for the rule package tasks.
         $destination = new TaskFileElement($profile['paths']['task_file'] ?? $profileFilePath . '.rptasks');
@@ -211,6 +227,10 @@ class GenerateRulePackageCommand extends Command
                     );
                 }
             }
+        }
+
+        if (isset($profile['license_file']) && !is_string($profile['license_file'])) {
+            $errors[] = 'The option "license_file" must be a string with the path to the license file.';
         }
 
         return $errors;

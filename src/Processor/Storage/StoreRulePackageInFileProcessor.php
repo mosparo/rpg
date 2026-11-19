@@ -104,12 +104,12 @@ class StoreRulePackageInFileProcessor implements ProcessorInterface
                 }
 
                 $ruleHeader = sprintf(
-                    '{"uuid":%s,"name":%s,"description":%s,"type":%s,"spamRatingFactor":%f,"items":[',
-                    json_encode($task->getUuid()),
-                    json_encode($task->getName()),
-                    json_encode($task->getDescription()),
-                    json_encode($task->getType()),
-                    $task->getSpamRatingFactor()
+                    '{"uuid":%s,"name":%s,"description":%s,"type":%s,"spamRatingFactor":%s,"items":[',
+                    json_encode($task->getUuid(), JSON_INVALID_UTF8_SUBSTITUTE),
+                    json_encode($task->getName(), JSON_INVALID_UTF8_SUBSTITUTE),
+                    json_encode($task->getDescription(), JSON_INVALID_UTF8_SUBSTITUTE),
+                    json_encode($task->getType(), JSON_INVALID_UTF8_SUBSTITUTE),
+                    json_encode($task->getSpamRatingFactor())
                 );
 
                 $destination->writeToFile($ruleHeader);
@@ -123,7 +123,7 @@ class StoreRulePackageInFileProcessor implements ProcessorInterface
                     'rating' => $task->getRating(),
                 ];
 
-                $destination->writeToFile($suffix . json_encode($ruleItem));
+                $destination->writeToFile($suffix . json_encode($ruleItem, JSON_INVALID_UTF8_SUBSTITUTE));
                 $suffix = ',';
             }
         }
@@ -136,7 +136,14 @@ class StoreRulePackageInFileProcessor implements ProcessorInterface
         }
 
         // Add the rule package footer
-        $destination->writeToFile(']}');
+        $licenseContent = '';
+        if ($rpContext->getLicenseFile()) {
+            $content = $rpContext->readLicenseFile();
+            if ($content) {
+                $licenseContent = sprintf(',"license":%s', json_encode($content, JSON_INVALID_UTF8_SUBSTITUTE));
+            }
+        }
+        $destination->writeToFile(sprintf(']%s}', $licenseContent));
 
         return $destination;
     }
@@ -217,7 +224,15 @@ class StoreRulePackageInFileProcessor implements ProcessorInterface
             'refreshInterval' => $rpContext->getRefreshInterval() ?? 86400,
             'rFiles' => $ruleFiles,
             'riFiles' => $ruleItemFiles,
-        ]));
+        ], JSON_INVALID_UTF8_SUBSTITUTE));
+
+        if ($rpContext->getLicenseFile()) {
+            $content = $rpContext->readLicenseFile();
+
+            if ($content) {
+                $zip->addFromString('LICENSE', $content);
+            }
+        }
 
         $progressBar->finish();
 
@@ -227,7 +242,7 @@ class StoreRulePackageInFileProcessor implements ProcessorInterface
     protected function storeRulePackageFile(ZipArchive $zip, int $id, string $pattern, array $content): string
     {
         $fileName = sprintf($pattern, $id);
-        $zip->addFromString($fileName, json_encode($content));
+        $zip->addFromString($fileName, json_encode($content, JSON_INVALID_UTF8_SUBSTITUTE));
 
         return $fileName;
     }
