@@ -56,7 +56,7 @@ class GenerateRulePackageCommandTest extends TestCase
             'refresh_interval' => 3600,
             'paths' => [
                 'task_file' => $this->tmpPath('work/package.rptasks'),
-                'uuid_index_path' => $this->tmpPath('work/package.rpuuids'),
+                'uuid_index_file' => $this->tmpPath('work/package.rpuuids'),
             ],
             'input' => [
                 [

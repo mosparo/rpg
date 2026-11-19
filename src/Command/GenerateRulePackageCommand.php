@@ -105,7 +105,7 @@ class GenerateRulePackageCommand extends Command
         ]);
 
         // Set the uuid file
-        $this->uuidHelper->setUuidFilePath($profile['paths']['uuid_index_path'] ?? $profileFilePath . '.rpuuids');
+        $this->uuidHelper->setUuidFilePath($profile['paths']['uuid_index_file'] ?? $profileFilePath . '.rpuuids');
 
         // Prepare the rule package context
         $rulePackageContext = (new RulePackageContext())
