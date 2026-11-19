@@ -14,19 +14,21 @@ class RuleContext implements ContextInterface
     protected InputTypeInterface $inputType;
 
     protected ?Uuid $uuid = null;
-    
+
     protected ?string $identifier = null;
-    
+
     protected ?string $type = null;
 
     protected ?string $name = null;
-    
+
+    protected ?string $description = null;
+
     protected ?float $spamRatingFactor = null;
 
     protected array $itemOptions = [];
-    
+
     protected ?ElementInterface $source = null;
-    
+
     protected ?TaskFileElement $destination = null;
 
     protected int $itemCounter = 0;
@@ -93,6 +95,18 @@ class RuleContext implements ContextInterface
     public function getName(): ?string
     {
         return $this->name;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
     }
 
     public function setSpamRatingFactor(float $spamRatingFactor): self

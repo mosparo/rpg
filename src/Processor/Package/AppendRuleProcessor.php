@@ -32,7 +32,7 @@ class AppendRuleProcessor implements ProcessorInterface
             $context->getUuid(),
             $context->getType(),
             $context->getName(),
-            null,
+            $context->getDescription(),
             $context->getSpamRatingFactor()
         );
         $destination->writeTaskToFile($task);

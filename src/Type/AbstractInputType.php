@@ -55,6 +55,7 @@ abstract class AbstractInputType implements InputTypeInterface, TypeInterface
             ->setIdentifier($input['rule']['identifier'] ?? uniqid())
             ->setType($input['rule']['type'] ?? '')
             ->setName($input['rule']['name'] ?? '')
+            ->setDescription($input['rule']['description'] ?? null)
             ->setSpamRatingFactor($input['rule']['spam_rating_factor'] ?? 1)
             ->setItemOptions($input['rule']['item'] ?? []);
 
@@ -69,8 +70,6 @@ abstract class AbstractInputType implements InputTypeInterface, TypeInterface
         $source->setOptions($input['source']['options'] ?? []);
 
         $ruleContext->setSource($source);
-
-        //$ruleContext->setDestination(new TemporaryFileElement($rulePackageContext, 'rule'));
         $ruleContext->setDestination($rulePackageContext->getDestination());
 
         return $ruleContext;

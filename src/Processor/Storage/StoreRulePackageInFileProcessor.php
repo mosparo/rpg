@@ -104,9 +104,10 @@ class StoreRulePackageInFileProcessor implements ProcessorInterface
                 }
 
                 $ruleHeader = sprintf(
-                    '{"uuid":%s,"name":%s,"type":%s,"spamRatingFactor":%f,"items":[',
+                    '{"uuid":%s,"name":%s,"description":%s,"type":%s,"spamRatingFactor":%f,"items":[',
                     json_encode($task->getUuid()),
                     json_encode($task->getName()),
+                    json_encode($task->getDescription()),
                     json_encode($task->getType()),
                     $task->getSpamRatingFactor()
                 );
@@ -174,7 +175,7 @@ class StoreRulePackageInFileProcessor implements ProcessorInterface
                 $ruleFileContent[] = [
                     'uuid' => $task->getUuid(),
                     'name' => $task->getName(),
-                    'description' => '',
+                    'description' => $task->getDescription(),
                     'type' => $task->getType(),
                     'spamRatingFactor' => $task->getSpamRatingFactor(),
                 ];

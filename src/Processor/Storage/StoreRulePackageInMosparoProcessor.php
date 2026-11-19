@@ -153,7 +153,7 @@ class StoreRulePackageInMosparoProcessor implements ProcessorInterface
 
             if ($task instanceof RuleTask) {
                 if ($indexHash) {
-                    $hash = md5($task->getUuid() . $task->getType() . $task->getName() . $task->getSpamRatingFactor());
+                    $hash = md5($task->getUuid() . $task->getType() . $task->getName() . ($task->getDescription() ?? '') . $task->getSpamRatingFactor());
 
                     if ($indexHash === $hash) {
                         continue;
@@ -165,7 +165,7 @@ class StoreRulePackageInMosparoProcessor implements ProcessorInterface
                     'data' => [
                         'uuid' => $task->getUuid(),
                         'name' => $task->getName(),
-                        'description' => '',
+                        'description' => $task->getDescription(),
                         'type' => $task->getType(),
                         'spamRatingFactor' => $task->getSpamRatingFactor(),
                     ],
